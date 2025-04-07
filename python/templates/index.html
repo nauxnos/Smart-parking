@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Smart Parking Camera</title>
+    <style>
+        .container {
+            display: flex;
+            justify-content: space-around;
+            margin: 20px;
+        }
+        .camera-box {
+            text-align: center;
+            width: 45%;
+        }
+        .video-feed, .captured-feed {
+            width: 100%;
+            max-width: 640px;
+            border: 2px solid #333;
+        }
+        h2 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="camera-box">
+            <h2>Camera Realtime</h2>
+            <img src="{{ url_for('video_feed') }}" class="video-feed">
+        </div>
+        <div class="camera-box">
+            <h2>Ảnh Chụp RFID</h2>
+            <img src="{{ url_for('captured_feed') }}" class="captured-feed">
+        </div>
+    </div>
+</body>
+</html>
