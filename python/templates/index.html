@@ -1,38 +1,66 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Smart Parking Camera</title>
+    <title>License Plate Detection</title>
     <style>
         .container {
             display: flex;
             justify-content: space-around;
-            margin: 20px;
+            margin-top: 20px;
         }
         .camera-box {
             text-align: center;
-            width: 45%;
         }
-        .video-feed, .captured-feed {
-            width: 100%;
-            max-width: 640px;
-            border: 2px solid #333;
-        }
-        h2 {
-            color: #333;
-            margin-bottom: 10px;
+        .plate-number {
+            margin-top: 10px;
+            font-size: 18px;
+            font-weight: bold;
         }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="camera-box">
-            <h2>Camera Realtime</h2>
-            <img src="{{ url_for('video_feed') }}" class="video-feed">
+            <h2>Camera Stream</h2>
+            <img src="{{ url_for('video_feed') }}" width="640">
         </div>
         <div class="camera-box">
-            <h2>Ảnh Chụp RFID</h2>
-            <img src="{{ url_for('captured_feed') }}" class="captured-feed">
+            <h2>Detected Plate</h2>
+            <img id="plateImage" src="{{ url_for('captured_feed') }}" width="320" onload="checkPlateNumber()">
+            <div class="plate-number" id="plateNumber"></div>
         </div>
     </div>
+
+    <script>
+        let lastPlateNumber = '';
+        let isUpdating = false;
+
+        function updatePlateNumber() {
+            if (isUpdating) return;
+            
+            isUpdating = true;
+            fetch('/get_plate_number')
+                .then(response => response.text())
+                .then(number => {
+                    const plateElement = document.getElementById('plateNumber');
+                    if (number && number !== lastPlateNumber) {
+                        lastPlateNumber = number;
+                        plateElement.textContent = `License Plate: ${number}`;
+                        plateElement.style.display = 'block';
+                    } else if (!number) {
+                        plateElement.style.display = 'none';
+                    }
+                    isUpdating = false;
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    isUpdating = false;
+                });
+        }
+
+        // Update when image changes
+        const plateImage = document.getElementById('plateImage');
+        plateImage.addEventListener('load', updatePlateNumber);
+    </script>
 </body>
 </html>
