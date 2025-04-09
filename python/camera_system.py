@@ -1,45 +1,66 @@
 import cv2
-from serial_handler import SerialHandler
+import logging
+import numpy as np
 
 class CameraSystem:
+
     def __init__(self):
-        # Khởi tạo camera
         self.camera = cv2.VideoCapture(0)
         if not self.camera.isOpened():
             raise RuntimeError("Không thể mở camera")
+        self.logger = logging.getLogger("Camera")
+        self.last_capture = None
+        self.last_crop = None  # Thêm biến lưu ảnh đã cắt
+        # Thêm kích thước cố định cho ảnh
+        self.CAPTURE_WIDTH = 320   # Thay đổi từ 640 xuống 320
+        self.CAPTURE_HEIGHT = 240  # Thay đổi từ 480 xuống 240
+        self.blank_image = np.ones((self.CAPTURE_HEIGHT, self.CAPTURE_WIDTH, 3), 
+                              dtype=np.uint8) * 255  # Tạo ảnh trắng
 
-        # Khởi tạo Serial Handler
-        self.serial = SerialHandler()
-        if not self.serial.connect():
-            self.camera.release()
-            raise RuntimeError("Không thể kết nối Serial")
-
-        self.card_detected = False
-        self.last_capture = None  # Lưu ảnh trong bộ nhớ
-        self.detected_result = None
-        self.is_processing = False  # Thêm flag để kiểm soát việc xử lý
-        self.current_result = None  # Thêm biến để lưu kết quả hiện tại
-        self.new_detection = False  # Add flag for new detections
+    def resize_image(self, image):
+        """Resize ảnh về kích thước cố định"""
+        return cv2.resize(image, (self.CAPTURE_WIDTH, self.CAPTURE_HEIGHT))
 
     def capture_image(self):
+        """Chụp và lưu vào bộ nhớ"""
         ret, frame = self.camera.read()
         if ret:
-            self.last_capture = frame.copy()  # Tạo bản copy của frame
-            self.is_processing = True  # Set flag khi bắt đầu xử lý
-            self.current_result = None  # Reset kết quả cũ
+            # Resize ảnh về kích thước cố định
+            frame = self.resize_image(frame)
+            self.last_capture = frame.copy()
+            self.logger.info(f"Đã chụp ảnh {self.CAPTURE_WIDTH}x{self.CAPTURE_HEIGHT}")
             return True
         return False
 
-    def get_frame(self):
-        ret, frame = self.camera.read()
-        if ret:
-            return ret, frame
-        return False, None
+    def generate_frames(self):
+        """Stream camera"""
+        while True:
+            ret, frame = self.camera.read()
+            if not ret:
+                continue
+            # Resize frame stream
+            frame = self.resize_image(frame)
+            ret, buffer = cv2.imencode('.jpg', frame)
+            frame = buffer.tobytes()
+            yield (b'--frame\r\n'
+                   b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
 
-    def set_current_result(self, result):
-        self.current_result = result
-        self.new_detection = True  # Set flag when new result is set
+    def generate_capture(self):
+        """Stream ảnh đã chụp"""
+        while True:
+            if self.last_crop is not None:
+                # Resize ảnh đã cắt
+                resized_crop = self.resize_image(self.last_crop)
+                ret, buffer = cv2.imencode('.jpg', resized_crop)
+                frame = buffer.tobytes()
+            else:
+                # Trả về ảnh trắng nếu không có biển số
+                ret, buffer = cv2.imencode('.jpg', self.blank_image)
+                frame = buffer.tobytes()
+                
+            yield (b'--frame\r\n'
+                   b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
 
     def cleanup(self):
-        self.camera.release()
-        self.serial.disconnect()
+        if self.camera.isOpened():
+            self.camera.release()

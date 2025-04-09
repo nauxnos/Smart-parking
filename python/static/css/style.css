@@ -1,0 +1,43 @@
+.container {
+    display: flex;
+    justify-content: space-around;
+    margin-top: 20px;
+}
+
+.camera-box {
+    text-align: center;
+    padding: 10px;
+    border: 2px solid #333;
+    border-radius: 8px;
+    background: #f5f5f5;
+}
+
+.camera-box h2 {
+    color: #333;
+    margin-bottom: 15px;
+}
+
+.camera-box img {
+    border: 3px solid #0066cc;
+    border-radius: 4px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+}
+
+.plate-info {
+    margin-top: 10px;
+    padding: 8px;
+    background: #f0f0f0;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+.plate-info p {
+    margin: 0;
+    font-size: 16px;
+    font-weight: bold;
+    color: #333;
+}
+
+#plate-number {
+    color: #0066cc;
+}

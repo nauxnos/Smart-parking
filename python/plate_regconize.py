@@ -54,16 +54,13 @@ class LicensePlateDetector:
             crop_img = img[y:y+h, x:x+w]
             
             # Vẽ khung biển số
-            cv2.rectangle(img, (x, y), (x+w, y+h), (0, 0, 255), 2)
+            # cv2.rectangle(img, (x, y), (x+w, y+h), (0, 0, 255), 2)
 
             # Nhận dạng ký tự
             license_plate = self._recognize_characters(crop_img)
             
             if license_plate != "unknown":
-                # Vẽ text lên ảnh
-                cv2.putText(img, license_plate, (x, y-10), 
-                           cv2.FONT_HERSHEY_SIMPLEX, 0.9, (36,255,12), 2)
-                return license_plate, img, True
+                return license_plate, crop_img, True
 
         return None, img, False
 

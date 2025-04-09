@@ -1,66 +1,23 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>License Plate Detection</title>
-    <style>
-        .container {
-            display: flex;
-            justify-content: space-around;
-            margin-top: 20px;
-        }
-        .camera-box {
-            text-align: center;
-        }
-        .plate-number {
-            margin-top: 10px;
-            font-size: 18px;
-            font-weight: bold;
-        }
-    </style>
+    <title>Camera Capture</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body>
     <div class="container">
         <div class="camera-box">
             <h2>Camera Stream</h2>
-            <img src="{{ url_for('video_feed') }}" width="640">
+            <img src="{{ url_for('video_feed') }}" width="320">
         </div>
         <div class="camera-box">
-            <h2>Detected Plate</h2>
-            <img id="plateImage" src="{{ url_for('captured_feed') }}" width="320" onload="checkPlateNumber()">
-            <div class="plate-number" id="plateNumber"></div>
+            <h2>Captured Image</h2>
+            <img src="{{ url_for('captured_feed') }}" width="320">
+            <div class="plate-info">
+                <p>Biển số: <span id="plate-number">Chờ phát hiện...</span></p>
+            </div>
         </div>
     </div>
-
-    <script>
-        let lastPlateNumber = '';
-        let isUpdating = false;
-
-        function updatePlateNumber() {
-            if (isUpdating) return;
-            
-            isUpdating = true;
-            fetch('/get_plate_number')
-                .then(response => response.text())
-                .then(number => {
-                    const plateElement = document.getElementById('plateNumber');
-                    if (number && number !== lastPlateNumber) {
-                        lastPlateNumber = number;
-                        plateElement.textContent = `License Plate: ${number}`;
-                        plateElement.style.display = 'block';
-                    } else if (!number) {
-                        plateElement.style.display = 'none';
-                    }
-                    isUpdating = false;
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    isUpdating = false;
-                });
-        }
-
-        // Update when image changes
-        const plateImage = document.getElementById('plateImage');
-        plateImage.addEventListener('load', updatePlateNumber);
-    </script>
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
 </body>
 </html>
