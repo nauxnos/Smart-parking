@@ -1,6 +1,8 @@
 from flask import Flask, Response, render_template, jsonify
+from flask_socketio import SocketIO, emit
 import threading
 import logging
+import time
 from camera_system import CameraSystem
 from serial_handler import SerialHandler
 from plate_regconize import LicensePlateDetector
@@ -12,6 +14,8 @@ logging.basicConfig(
 )
 
 app = Flask(__name__)
+socketio = SocketIO(app, cors_allowed_origins="*")  # Cho phép truy cập từ các nguồn khác nếu cần
+
 camera = None
 serial = None
 plate_recognize = None
@@ -32,26 +36,43 @@ def captured_feed():
 
 @app.route('/get_plate_number')
 def get_plate_number():
-    if hasattr(camera, 'last_plate_number'):
+    if camera and hasattr(camera, 'last_plate_number'):
         return jsonify({'plate_number': camera.last_plate_number})
+    return jsonify({'plate_number': None})
+
+@socketio.on('connect')
+def handle_connect():
+    logging.info('Client kết nối thành công')
+    # Gửi biển số hiện tại (nếu có) cho client mới kết nối
+    if camera and hasattr(camera, 'last_plate_number') and camera.last_plate_number:
+        emit('plate_update', {'plate_number': camera.last_plate_number})
 
 def handle_serial():
     """Xử lý dữ liệu từ Serial"""
     while True:
-        if serial:
-            response = serial.read_response()
-            if response == "CARD_DETECTED":
-                logging.info("Phát hiện thẻ RFID - Chụp ảnh")
-                if camera.capture_image():
-                    license_plate, crop_img, ret = findPlate(camera.last_capture)  # Gọi findPlate ở đây
-                    if ret and crop_img is not None:
-                        camera.last_crop = crop_img  # Lưu ảnh đã cắt
-                        camera.last_plate_number = license_plate  # Lưu biển số
-                        logging.info(f"Đã cập nhật biển số: {license_plate}")
-                    else:
-                        camera.last_crop = None  # Reset về None để hiển thị ảnh trắng
-                        camera.last_plate_number = None
-                        logging.warning("Không phát hiện biển số - Hiển thị ảnh trắng")
+        try:
+            if serial:
+                response = serial.read_response()
+                if response == "CARD_DETECTED":
+                    logging.info("Phát hiện thẻ RFID - Chụp ảnh")
+                    if camera.capture_image():
+                        license_plate, crop_img, ret = findPlate(camera.last_capture)
+                        if ret and crop_img is not None:
+                            camera.last_crop = crop_img
+                            camera.last_plate_number = license_plate
+                            # Phát sóng thông báo về biển số đến tất cả client
+                            socketio.emit('plate_update', {'plate_number': license_plate})
+                            logging.info(f"Đã cập nhật biển số: {license_plate}")
+                        else:
+                            camera.last_crop = None
+                            camera.last_plate_number = None
+                            # Gửi thông báo không phát hiện
+                            socketio.emit('plate_update', {'plate_number': None})
+                            logging.warning("Không phát hiện biển số - Hiển thị ảnh trắng")
+            time.sleep(0.1)  # Ngăn CPU hoạt động 100%
+        except Exception as e:
+            logging.error(f"Lỗi trong quá trình xử lý serial: {e}")
+            time.sleep(1)  # Đợi một chút trước khi thử lại
 
 def findPlate(img):
     license_plate, crop_img, ret = plate_recognize.detect_plate(img)
@@ -72,11 +93,14 @@ def main():
         logging.info("Đã khởi tạo Serial")
         plate_recognize = LicensePlateDetector()
         logging.info("Đã khởi tạo nhận diện biển số")
+        
+        # Khởi động luồng xử lý serial
         serial_thread = threading.Thread(target=handle_serial)
         serial_thread.daemon = True
         serial_thread.start()
         
-        app.run(host='0.0.0.0', port=5000)
+        # Chạy ứng dụng Flask với SocketIO
+        socketio.run(app, host='0.0.0.0', port=5000, debug=True, use_reloader=False)
         
     except Exception as e:
         logging.error(f"Lỗi: {e}")

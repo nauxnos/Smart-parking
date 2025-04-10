@@ -1,30 +1,34 @@
 document.addEventListener('DOMContentLoaded', function() {
-    const capturedImage = document.querySelector('.camera-box img:last-child');
-    const plateNumber = document.getElementById('plate-number');
+    const plateNumberElement = document.getElementById('plate-number');
+    const capturedFeedImg = document.querySelector('.camera-box:nth-child(2) img');
     
-    // Hàm cập nhật biển số
-    function updatePlateNumber(number) {
-        plateNumber.textContent = number || 'Không phát hiện';
-    }
+    // Kết nối Socket.IO
+    const socket = io();
     
-    // Kiểm tra biển số mỗi khi ảnh được cập nhật
-    capturedImage.addEventListener('load', function() {
-        // TODO: Thêm API endpoint để lấy biển số
-        fetch('/get_plate_number')
-            .then(response => response.json())
-            .then(data => {
-                if (data.plate_number) {
-                    updatePlateNumber(data.plate_number);
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                updatePlateNumber(null);
-            });
+    // Xử lý khi kết nối thành công
+    socket.on('connect', function() {
+        console.log('Đã kết nối với server');
     });
     
-    // Xử lý lỗi nếu ảnh không load được
-    capturedImage.addEventListener('error', function() {
-        console.error("Image failed to load");
+    // Xử lý khi kết nối lỗi
+    socket.on('connect_error', function(error) {
+        console.error('Không thể kết nối với server:', error);
+    });
+    
+    // Xử lý khi ngắt kết nối
+    socket.on('disconnect', function() {
+        console.log('Đã ngắt kết nối với server');
+    });
+    
+    // Xử lý cập nhật biển số
+    socket.on('plate_update', function(data) {
+        console.log('Nhận được cập nhật biển số:', data);
+        if (data.plate_number) {
+            plateNumberElement.textContent = data.plate_number;
+            capturedFeedImg.alt = "Biển số: " + data.plate_number;
+        } else {
+            plateNumberElement.textContent = "Không phát hiện";
+            capturedFeedImg.alt = "Không phát hiện biển số";
+        }
     });
 });
