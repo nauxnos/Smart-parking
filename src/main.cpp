@@ -22,7 +22,6 @@ void loop() {
     // Đọc RFID
     if (rfid_in.cardDetect()) {
         Serial.println("CARD_DETECTED");
-        
         barrier_in.openBarrier();
         delay(3000);
         barrier_in.closeBarrier();
