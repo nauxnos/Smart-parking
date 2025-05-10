@@ -20,11 +20,18 @@ void setup() {
 
 void loop() {
     // Đọc RFID
-    if (rfid_in.cardDetect()) {
-        Serial.println("CARD_DETECTED");
-        barrier_in.openBarrier();
-        delay(3000);
-        barrier_in.closeBarrier();
+    rfid_in.cardDetect();
+    
+    // Kiểm tra lệnh từ Serial
+    if (Serial.available() > 0) {
+        String command = Serial.readStringUntil('\n');
+        if (command == "OPEN_BARRIER") {
+            Serial.println("OPENING_BARRIER");
+            barrier_in.openBarrier();
+            delay(3000);
+            barrier_in.closeBarrier();
+        }
     }
+    
     delay(50);
 }

@@ -1,129 +1,322 @@
+/* Reset và style cơ bản */
+body {
+    margin: 0;
+    padding: 0;
+    font-family: Arial, sans-serif;
+    background-color: #f0f0f0;
+}
+
 .header {
-    background: #333;
+    background: #007acc;
     color: white;
-    padding: 1rem;
+    padding: 5px 15px;
+}
+
+.header-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 5px 0;
+}
+
+.header-top h1 {
+    font-size: 20px;
+    margin: 0;
+}
+
+.header-right {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.logout-btn {
+    background: #dc3545;
+    color: white;
+    padding: 5px 15px;
+    border-radius: 3px;
+    text-decoration: none;
+    font-size: 13px;
+    transition: all 0.2s ease;
+}
+
+.logout-btn:hover {
+    background: #c82333;
+    opacity: 0.9;
+}
+
+.container {
+    padding: 20px;
+}
+
+.cameras-container {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+.camera-box {
+    flex: 1;
+    min-width: 300px;
+    border: 2px solid #333;
+    border-radius: 5px;
+    padding: 10px;
+    background: white;
+}
+
+.camera-box h2 {
+    margin: 0 0 10px 0;
+    text-align: center;
+    color: #333;
+}
+
+.camera-view {
+    border: 1px solid #ccc;
+    padding: 5px;
+    margin-bottom: 10px;
+}
+
+.camera-view img {
+    width: 100%;
+    height: auto;
+    display: block;
+}
+
+.plate-input {
+    padding: 5px;
+    text-align: center; /* Thêm căn giữa cho container */
+}
+
+.plate-input p {
+    margin: 0;
+    font-size: 14px;
+}
+
+.plate-input #plate-number {
+    display: inline-block;
+    min-width: 120px;
+    padding: 3px 10px;
+    background: #f8f9fa;
+    border-radius: 3px;
+    border: 1px solid #dee2e6;
+    text-align: center;
+}
+
+.plate-input input {
+    width: 100%;
+    padding: 5px;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+    text-align: center;
+}
+
+.plate-view {
+    margin: 10px 0;
+    text-align: center;
+}
+
+.plate-view h3 {
+    margin: 5px 0;
+    font-size: 14px;
+    color: #666;
+}
+
+.plate-view img {
+    border: 1px solid #ccc;
+    border-radius: 3px;
+    padding: 2px;
+    background: white;
+}
+
+.info-box {
+    flex: 1;
+    min-width: 300px;
+    padding: 10px;
+    background: white;
+    border: 2px solid #333;
+    border-radius: 5px;
+}
+
+.vehicle-info {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.vehicle-info label {
+    width: 80px;
+    font-weight: bold;
+}
+
+.vehicle-info input {
+    flex: 1;
+    padding: 5px;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+}
+
+.green-bg {
+    background-color: #90EE90;
+}
+
+.control-buttons {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.blue-btn {
+    background: #007bff;
+    color: white;
+    border: none;
+    padding: 10px;
+    border-radius: 3px;
+    cursor: pointer;
+}
+
+.red-btn {
+    background: #ff4444;
+    color: white;
+    border: none;
+    padding: 10px;
+    border-radius: 3px;
+    cursor: pointer;
+}
+
+.exit-btn {
+    background: #dc3545;
+    color: white;
+    border: none;
+    padding: 10px;
+    border-radius: 3px;
+    cursor: pointer;
+    grid-column: span 2;
+}
+
+.time-display {
+    background: rgba(0, 0, 0, 0.2);
+    padding: 3px 10px;
+    border-radius: 3px;
+    font-size: 14px;
+}
+
+button:hover {
+    opacity: 0.9;
+}
+
+button:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+}
+
+/* Navigation Styles */
+.nav-container {
+    background: #007bff;
+    padding: 10px 20px;
+    border-bottom: 1px solid #dee2e6;
+    margin-top: 5px;
+}
+
+.nav-tabs {
+    display: flex;
+    gap: 5px;
+}
+
+.nav-btn {
+    padding: 5px 15px;
+    border: none;
+    background: #ffc107; /* Màu vàng */
+    color: #000; /* Đổi màu chữ thành đen cho dễ đọc */
+    cursor: pointer;
+    border-radius: 3px;
+    font-size: 13px;
+    transition: all 0.2s ease;
+}
+
+.nav-btn:hover {
+    background: #ffca2c; /* Màu vàng sáng hơn khi hover */
+}
+
+.nav-btn.active {
+    background: #dc3545; /* Màu đỏ khi active */
+    color: white;
+}
+
+/* Content Section Styles */
+.content-section {
+    display: none;
+    padding: 20px;
+}
+
+.content-section.active {
+    display: block;
+}
+
+/* Table Styles */
+.table-container {
+    margin: 20px;
+    overflow-x: auto;
+    background: white;
+    padding: 20px;
+    border-radius: 5px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+#vehicle-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 15px 0;
+}
+
+#vehicle-table th,
+#vehicle-table td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid #ddd;
+}
+
+#vehicle-table th {
+    background-color: #f4f4f4;
+    font-weight: bold;
+}
+
+#vehicle-table tr:nth-child(even) {
+    background-color: #f9f9f9;
+}
+
+#vehicle-table tr:hover {
+    background-color: #f5f5f5;
+}
+
+.table-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
     margin-bottom: 20px;
 }
 
-.user-info {
+.search-box {
     display: flex;
-    align-items: center;
-    gap: 1rem;
+    gap: 10px;
+    margin-left: auto;
 }
 
-.logout-btn {
-    background: #dc3545;
-    color: white;
-    padding: 0.5rem 1rem;
-    border-radius: 4px;
-    text-decoration: none;
-}
-
-.container {
-    display: flex;
-    justify-content: space-around;
-    margin-top: 20px;
-}
-
-.camera-box {
-    text-align: center;
-    padding: 10px;
-    border: 2px solid #333;
-    border-radius: 8px;
-    background: #f5f5f5;
-}
-
-.camera-box h2 {
-    color: #333;
-    margin-bottom: 15px;
-}
-
-.camera-box img {
-    border: 3px solid #0066cc;
-    border-radius: 4px;
-    box-shadow: 0 0 10px rgba(0,0,0,0.1);
-}
-
-.plate-info {
-    margin-top: 10px;
-    padding: 8px;
-    background: #f0f0f0;
+.search-box input {
+    padding: 8px 12px;
     border: 1px solid #ccc;
     border-radius: 4px;
+    width: 200px;
+    font-size: 14px;
 }
 
-.plate-info p {
-    margin: 8px 0;
-    font-size: 16px;
-    font-weight: bold;
-    color: #333;
+.search-box input:focus {
+    outline: none;
+    border-color: #007bff;
+    box-shadow: 0 0 0 2px rgba(0,123,255,0.25);
 }
 
-#plate-number, #rfid-uid, #owner-name, #entry-time {
-    color: #0066cc;
-}
-
-.logout-btn:hover {
-    background: #c82333;
-}
-
-.login-container {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
-    background-color: #f5f5f5;
-}
-
-.login-form {
-    background: white;
-    padding: 30px;
-    border-radius: 8px;
-    box-shadow: 0 0 10px rgba(0,0,0,0.1);
-    width: 300px;
-}
-
-.login-form h2 {
-    text-align: center;
-    color: #333;
-    margin-bottom: 20px;
-}
-
-.form-group {
-    margin-bottom: 15px;
-}
-
-.form-group input {
-    width: 100%;
-    padding: 10px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    font-size: 16px;
-}
-
-.login-btn {
-    width: 100%;
-    padding: 10px;
-    background: #0066cc;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 16px;
-}
-
-.login-btn:hover {
-    background: #0052a3;
-}
-
-.error-message {
-    color: #dc3545;
-    text-align: center;
-    margin-bottom: 15px;
-    padding: 8px;
-    background: #ffe6e6;
-    border-radius: 4px;
+.search-box button {
+    padding: 8px 15px;
+    font-size: 14px;
 }

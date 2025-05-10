@@ -73,3 +73,10 @@ class SerialHandler:
         except serial.SerialException as e:
             self.logger.error(f"Lỗi đọc dữ liệu: {e}")
         return None
+
+    def write_command(self, command):
+        """Gửi lệnh đến Arduino"""
+        if self.serial_port and self.serial_port.is_open:
+            self.serial_port.write(f"{command}\n".encode())
+            return True
+        return False

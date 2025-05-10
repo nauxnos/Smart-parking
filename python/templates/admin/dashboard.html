@@ -1,25 +1,126 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Camera Capture</title>
+    <title>Bãi đỗ xe thông minh</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-    <!-- Thêm thư viện Socket.IO -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.6.0/socket.io.js"></script>
 </head>
 <body>
-    <div class="container">
-        <div class="camera-box">
-            <h2>Camera Stream</h2>
-            <img src="{{ url_for('video_feed') }}" width="320">
+    <div class="header">
+        <div class="header-top">
+            <h1>BÃI ĐỖ XE THÔNG MINH</h1>
+            <div class="header-right">
+                <div class="time-display" id="current-time"></div>
+                <a href="{{ url_for('logout') }}" class="logout-btn">Đăng xuất</a>
+            </div>
         </div>
-        <div class="camera-box">
-            <h2>Captured Image</h2>
-            <img src="{{ url_for('captured_feed') }}" width="320">
-            <div class="plate-info">
-                <p>Biển số: <span id="plate-number">Chờ phát hiện...</span></p>
+        <div class="nav-container">
+            <div class="nav-tabs">
+                <button class="nav-btn active" data-target="main-content">Dashboard</button>
+                <button class="nav-btn" data-target="table-content">Table</button>
             </div>
         </div>
     </div>
+
+    <!-- Main content -->
+    <div id="main-content" class="content-section active">
+        <div class="container">
+            <div class="cameras-container">
+                <!-- Camera vào -->
+                <div class="camera-box">
+                    <h2>CAMERA VÀO</h2>
+                    <div class="camera-view">
+                        <img src="{{ url_for('video_feed') }}" width="280">
+                    </div>
+                    <!-- Thêm phần hiển thị ảnh biển số -->
+                    <div class="plate-view">
+                        <h3>Biển số xe</h3>
+                        <img src="{{ url_for('captured_feed') }}" width="180">
+                    </div>
+                    <div class="plate-input">
+                        <p>Biển số: <span id="plate-number">Chờ phát hiện...</span></p>
+                    </div>
+                </div>
+                
+                <!-- Camera ra -->
+                <div class="camera-box">
+                    <h2>CAMERA VÀO</h2>
+                    <div class="camera-view">
+                        <img src="{{ url_for('video_feed') }}" width="280">
+                    </div>
+                    <!-- Thêm phần hiển thị ảnh biển số -->
+                    <div class="plate-view">
+                        <h3>Biển số xe</h3>
+                        <img src="{{ url_for('captured_feed') }}" width="180">
+                    </div>
+                    <div class="plate-input">
+                        <p>Biển số: <span id="plate-number">Chờ phát hiện...</span></p>
+                    </div>
+                </div>
+                
+                <!-- Phần thông tin -->
+                <div class="info-box">
+                    <div class="vehicle-info">
+                        <label>SỐ XE:</label>
+                        <input type="text" id="car-count" readonly value="0" class="green-bg">
+                    </div>
+                    <div class="vehicle-info">
+                        <label>VÀO:</label>
+                        <input type="text" readonly>
+                    </div>
+                    <div class="vehicle-info">
+                        <label>RA:</label>
+                        <input type="text" readonly>
+                    </div>
+                    <div class="vehicle-info">
+                        <label>TỔNG:</label>
+                        <input type="text" readonly>
+                    </div>
+                    <div class="vehicle-info">
+                        <label>TIỀN:</label>
+                        <input type="text" readonly>
+                    </div>
+                    
+                    <!-- Nút điều khiển -->
+                    <div class="control-buttons">
+                        <button id="manual-btn" class="blue-btn">THỦ CÔNG</button>
+                        <button id="auto-btn" class="blue-btn">TỰ ĐỘNG</button>
+                        <button id="in-btn" class="red-btn">VÀO</button>
+                        <button id="out-btn" class="red-btn">RA</button>
+                        <button id="barrier-control" class="red-btn">MỞ BARRIER</button>
+                        <button id="exit-btn" class="exit-btn">THOÁT</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Table content -->
+    <div id="table-content" class="content-section">
+        <div class="table-container">
+            <div class="table-header">
+                <h2>Danh sách xe</h2>
+                <div class="search-box">
+                    <input type="text" id="search-input" placeholder="Nhập biển số xe...">
+                </div>
+            </div>
+            <table id="vehicle-table">
+                <thead>
+                    <tr>
+                        <th>STT</th>
+                        <th>Biển số</th>
+                        <th>Thời gian vào</th>
+                        <th>Thời gian ra</th>
+                        <th>Trạng thái</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Dữ liệu sẽ được JavaScript điền vào đây -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
 </body>
 </html>
