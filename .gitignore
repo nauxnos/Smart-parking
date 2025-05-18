@@ -1,4 +1,4 @@
 .pio
 .vscode
 .vscode/extensions.json
-python/.__pycache__
+python/__pycache__
