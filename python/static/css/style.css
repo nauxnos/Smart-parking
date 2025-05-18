@@ -144,7 +144,7 @@ body {
 }
 
 .vehicle-info label {
-    width: 80px;
+    width: 160px;
     font-weight: bold;
 }
 
@@ -156,7 +156,7 @@ body {
 }
 
 .green-bg {
-    background-color: #90EE90;
+    background-color: #90ee90;
 }
 
 .control-buttons {
@@ -254,9 +254,90 @@ button:disabled {
 }
 
 /* Table Styles */
+#vehicle-table {
+    width: 100%;
+    table-layout: fixed; /* Force fixed column widths */
+    border-collapse: collapse;
+    margin: 15px 0;
+}
+
+#vehicle-table th,
+#vehicle-table td {
+    padding: 0 12px; /* Remove vertical padding */
+    text-align: left;
+    border-bottom: 1px solid #ddd;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    height: 40px; /* Fixed height for all cells */
+    line-height: 40px; /* Match height for vertical centering */
+    box-sizing: border-box;
+}
+
+#vehicle-table th {
+    background-color: #f4f4f4;
+    font-weight: bold;
+    height: 40px; /* Match cell height */
+    line-height: 40px;
+}
+
+#vehicle-table tr {
+    height: 40px; /* Ensure consistent row height */
+    align-items: center;
+    align-content: center;
+}
+
+/* Style for manual out button to fit in cell */
+#vehicle-table .manual-out-btn {
+    height: 28px;
+    line-height: 28px;
+    padding: 0 8px;
+    margin: 6px 0; /* Center button vertically in 40px cell */
+    display: inline-block;
+    white-space: nowrap;
+}
+
+/* Ensure time-out cell maintains height */
+#vehicle-table td:nth-child(5) {
+    height: 40px;
+    line-height: 40px;
+    padding: 0 12px;
+    text-align: center;
+}
+
+#vehicle-table th:nth-child(1), 
+#vehicle-table td:nth-child(1) { /* STT */
+    width: 40px;
+}
+
+#vehicle-table th:nth-child(2), 
+#vehicle-table td:nth-child(2) { /* Biển số */
+    width: 120px;
+}
+
+#vehicle-table th:nth-child(3), 
+#vehicle-table td:nth-child(3) { /* RFID */
+    width: 120px;
+}
+
+#vehicle-table th:nth-child(4), 
+#vehicle-table td:nth-child(4) { /* Thời gian vào */
+    width: 180px;
+}
+
+#vehicle-table th:nth-child(5), 
+#vehicle-table td:nth-child(5) { /* Thời gian ra */
+    width: 180px;
+}
+
+#vehicle-table th:nth-child(6), 
+#vehicle-table td:nth-child(6) { /* Trạng thái */
+    width: 100px;
+}
+
 .table-container {
     margin: 20px;
-    overflow-x: auto;
+    overflow-x: auto; /* Enable horizontal scroll if needed */
     background: white;
     padding: 20px;
     border-radius: 5px;
@@ -272,7 +353,7 @@ button:disabled {
 #vehicle-table th,
 #vehicle-table td {
     padding: 12px;
-    text-align: left;
+    text-align: center;
     border-bottom: 1px solid #ddd;
 }
 
@@ -319,4 +400,207 @@ button:disabled {
 .search-box button {
     padding: 8px 15px;
     font-size: 14px;
+}
+
+/* Login Styles */
+.login-container {
+    max-width: 400px;
+    margin: 100px auto;
+    padding: 20px;
+    background: white;
+    border-radius: 5px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.alert {
+    padding: 10px;
+    margin-bottom: 15px;
+    border-radius: 4px;
+    text-align: center;
+}
+
+.alert-error {
+    background-color: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+}
+
+.form-group {
+    margin-bottom: 15px;
+}
+
+.form-group input {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    box-sizing: border-box;
+}
+
+.login-btn {
+    width: 100%;
+    padding: 10px;
+    background: #007bff;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.login-btn:hover {
+    background: #0056b3;
+}
+
+.manual-out-btn {
+    background: #dc3545;
+    color: white;
+    border: none;
+    padding: 4px 8px;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 12px;
+    transition: background-color 0.2s;
+    height: 28px;
+    line-height: 20px;
+    margin: 6px 0;
+    display: inline-block;
+    white-space: nowrap;
+}
+
+.manual-out-btn:hover {
+    background: #c82333;
+}
+
+.manual-out-btn:active {
+    transform: translateY(1px);
+}
+
+.recent-logs {
+    margin-top: 20px;
+    background: white;
+    padding: 15px;
+    border-radius: 5px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.recent-logs h3 {
+    margin: 0 0 10px 0;
+    font-size: 16px;
+    color: #333;
+}
+
+#recent-logs-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 15px;
+}
+
+#recent-logs-table th,
+#recent-logs-table td {
+    padding: 8px;
+    text-align: center;
+    border-bottom: 1px solid #eee;
+}
+
+#recent-logs-table th {
+    background: #f8f9fa;
+    font-weight: bold;
+}
+
+.status-in {
+    color: #28a745;
+    font-weight: bold;
+}
+
+.status-out {
+    color: #dc3545;
+    font-weight: bold;
+}
+
+.pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 5px;
+    padding: 15px 0;
+}
+
+#page-numbers {
+    display: flex;
+    flex-direction: row; /* Ensure horizontal layout */
+    gap: 5px;
+    align-items: center;
+}
+
+.page-number {
+    min-width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    background-color: #2c3e50;
+    color: #ffffff;
+    border-radius: 4px;
+    font-size: 14px;
+    font-weight: 400;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-decoration: none;
+}
+
+.page-number.active {
+    color: #F8D4A1;
+    cursor: default;
+    border: #D48311 1px solid;
+    background-color: #472C06;
+}
+
+.ellipsis {
+    color: #2c3e50;
+    margin: 0 5px;
+    font-weight: bold;
+    min-width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0; /* Remove margin, let gap control spacing */
+}
+
+.page-btn {
+    min-width: 70px; /* Make buttons wide enough for text */
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    background-color: #2c3e50;
+    color: #fff;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.page-btn:hover:not(:disabled) {
+    background-color: #34495e;
+}
+
+.page-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+#vehicle-table td:nth-child(6) {
+    font-weight: bold;
+}
+
+#vehicle-table td:nth-child(6)[data-status="IN"] {
+    color: #28a745; /* Blue for IN status */
+    font-weight: bold;
+}
+
+#vehicle-table td:nth-child(6)[data-status="OUT"] {
+    color: #dc3545; /* Green for OUT status */
+    font-weight: bold;
 }

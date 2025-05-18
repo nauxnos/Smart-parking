@@ -1,6 +1,7 @@
 #include "RFID_Sensor.h"
 
-void RFID_Sensor::init(int SS_PIN, int RST_PIN) {
+void RFID_Sensor::init(int SS_PIN, int RST_PIN, bool is_entry) {
+    this->is_entry = is_entry;
     SPI.begin();
     this->device = MFRC522(SS_PIN, RST_PIN);
     this->device.PCD_Init();
@@ -20,8 +21,12 @@ bool RFID_Sensor::cardDetect() {
 
     // Chuyển đổi UID thành string
     this->lastCardUID = uidToString(this->device.uid.uidByte, this->device.uid.size);
-    
-    Serial.print(F("Card detected - UID: "));
+    if(this->is_entry){
+        Serial.print(F("ENTRY - Card UID: "));
+    }
+    else{
+        Serial.print(F("EXIT - Card UID: "));
+    }
     Serial.println(this->lastCardUID);
     
     // Dừng crypto và halt thẻ

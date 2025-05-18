@@ -8,12 +8,13 @@ class RFID_Sensor {
 private:
     MFRC522 device;
     String lastCardUID;
+    bool is_entry;
 
 public:
     RFID_Sensor() {}
     
     // Khởi tạo module RFID
-    void init(int SS_PIN, int RST_PIN);
+    void init(int SS_PIN, int RST_PIN, bool is_entry);
     
     // Kiểm tra và đọc thẻ
     bool cardDetect();

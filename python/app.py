@@ -38,7 +38,7 @@ def login():
             session['username'] = username
             return redirect(url_for('home'))
         else:
-            return "Invalid credentials", 401
+            return render_template('login.html', error='Tài khoản hoặc mật khẩu không đúng')
     return render_template('login.html')
 
 @app.route('/logout')
@@ -65,9 +65,11 @@ def get_plate_number():
 @app.route('/get_vehicle_data')
 def get_vehicle_data():
     if db_handler:
-        data = db_handler.get_vehicle_logs()
+        page = request.args.get('page', 1, type=int)
+        search = request.args.get('search', None)
+        data = db_handler.get_vehicle_logs(page=page, search_text=search)
         return jsonify(data)
-    return jsonify([])
+    return jsonify({'data': [], 'total_pages': 1, 'current_page': 1, 'total_records': 0})
 
 @app.route('/search_vehicle')
 def search_vehicle():
@@ -76,6 +78,45 @@ def search_vehicle():
         data = db_handler.search_vehicle_logs(plate_number)
         return jsonify(data)
     return jsonify([])
+
+@app.route('/manual_vehicle_out', methods=['POST'])
+def manual_vehicle_out():
+    if not request.is_json:
+        return jsonify({'success': False, 'message': 'Invalid request'})
+        
+    data = request.json
+    rfid = data.get('rfid')
+    plate_number = data.get('plate_number')
+    
+    if not rfid or not plate_number:
+        return jsonify({'success': False, 'message': 'Missing data'})
+    
+    # Gọi hàm xử lý xe ra từ DatabaseHandler
+    result = db_handler.save_vehicle_log(rfid, plate_number, 'OUT')
+    
+    if result:
+        return jsonify({'success': True})
+    return jsonify({'success': False, 'message': 'Database error'})
+
+@app.route('/get_recent_logs')
+def get_recent_logs():
+    """Lấy 5 bản ghi gần nhất"""
+    if db_handler:
+        data = db_handler.get_vehicle_logs(page=1, per_page=5)
+        return jsonify(data.get('data', []))
+    return jsonify([])
+
+@app.route('/get_latest_vehicles')
+def get_latest_vehicles():
+    """Lấy xe vào và ra gần nhất"""
+    if db_handler:
+        latest_in = db_handler.get_latest_vehicle('IN')
+        latest_out = db_handler.get_latest_vehicle('OUT')
+        return jsonify({
+            'latest_in': latest_in,
+            'latest_out': latest_out
+        })
+    return jsonify({'latest_in': None, 'latest_out': None})
 
 @socketio.on('connect')
 def handle_connect():
@@ -93,40 +134,81 @@ def handle_open_barrier():
         return {'status': 'success'}
     return {'status': 'error', 'message': 'Serial không khả dụng'}
 
+@socketio.on('open_barrier_in')
+def handle_open_barrier_in():
+    """Xử lý yêu cầu mở barrier vào từ web"""
+    if serial:
+        serial.open_barrier_in()
+        logging.info("Đã gửi lệnh mở barrier vào")
+        return {'status': 'success'}
+    return {'status': 'error', 'message': 'Serial không khả dụng'}
+
+@socketio.on('open_barrier_out')
+def handle_open_barrier_out():
+    """Xử lý yêu cầu mở barrier ra từ web"""
+    if serial:
+        serial.open_barrier_out()
+        logging.info("Đã gửi lệnh mở barrier ra")
+        return {'status': 'success'}
+    return {'status': 'error', 'message': 'Serial không khả dụng'}
+
 def handle_serial():
     """Xử lý dữ liệu từ Serial"""
     while True:
         try:
             if serial:
-                # response = serial.read_response()
-                # if response and "CARD_DETECTED:" in response:
-                #     rfid = response.split(":")[1].strip()
-                #     logging.info(f"Phát hiện thẻ RFID: {rfid}")
                 response = serial.read_response()
-                if response and "Card detected" in response:
-                    logging.info("Phát hiện thẻ RFID - Chụp ảnh")
-                    if camera.capture_image():
-                        license_plate, crop_img, ret = findPlate(camera.last_capture)
-                        rfid = response.split("UID:")[1].strip()
-                        logging.info(f"Phát hiện thẻ RFID: {rfid}")
-                        if ret and crop_img is not None:
-                            camera.last_crop = crop_img
-                            camera.last_plate_number = license_plate
-                            db_handler.save_vehicle_log(rfid, license_plate)
-                            # Phát sóng thông báo về biển số đến tất cả client
-                            socketio.emit('plate_update', {'plate_number': license_plate})
-                            logging.info(f"Đã cập nhật biển số: {license_plate}")
-                            handle_open_barrier()
-                        else:
-                            camera.last_crop = None
-                            camera.last_plate_number = None
-                            # Gửi thông báo không phát hiện
-                            socketio.emit('plate_update', {'plate_number': None})
-                            logging.warning("Không phát hiện biển số - Hiển thị ảnh trắng")
-            time.sleep(0.1)  # Ngăn CPU hoạt động 100%
+                if response:
+                    rfid = None
+                    direction = None
+                    
+                    # Xử lý RFID vào
+                    if "ENTRY" in response:
+                        direction = "IN"
+                        rfid = response.split("ENTRY - Card UID: ")[1].strip()
+                        logging.info(f"Phát hiện thẻ RFID vào: {rfid}")
+                    
+                    # Xử lý RFID ra
+                    elif "EXIT" in response:
+                        direction = "OUT"
+                        rfid = response.split("EXIT - Card UID: ")[1].strip()
+                        logging.info(f"Phát hiện thẻ RFID ra: {rfid}")
+                    
+                    if rfid and direction:
+                        if camera.capture_image():
+                            license_plate, crop_img, ret = findPlate(camera.last_capture)
+                            
+                            if ret and crop_img is not None:
+                                camera.last_crop = crop_img
+                                camera.last_plate_number = license_plate
+                                
+                                # Xử lý xe qua DatabaseHandler với trạng thái cụ thể
+                                result = db_handler.process_vehicle(rfid, license_plate, direction)
+                                
+                                if result['success']:
+                                    if direction == 'IN':
+                                        serial.open_barrier_in()
+                                    else:
+                                        serial.open_barrier_out()
+                                        
+                                    socketio.emit('plate_update', {
+                                        'plate_number': license_plate, 
+                                        'status': direction
+                                    })
+                                else:
+                                    error_msg = "Thẻ không hợp lệ cho hướng này" if direction == 'OUT' else result['message']
+                                    logging.warning(error_msg)
+                                    socketio.emit('error', {'message': error_msg})
+                            else:
+                                camera.last_crop = None
+                                camera.last_plate_number = None
+                                socketio.emit('plate_update', {'plate_number': None})
+                                logging.warning("Không phát hiện biển số")
+                            
+            time.sleep(0.1)
         except Exception as e:
             logging.error(f"Lỗi trong quá trình xử lý serial: {e}")
-            time.sleep(1)  # Đợi một chút trước khi thử lại
+            time.sleep(1)
 
 def findPlate(img):
     license_plate, crop_img, ret = plate_recognize.detect_plate(img)

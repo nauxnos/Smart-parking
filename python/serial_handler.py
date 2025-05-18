@@ -80,3 +80,17 @@ class SerialHandler:
             self.serial_port.write(f"{command}\n".encode())
             return True
         return False
+
+    def open_barrier_in(self):
+        """Gửi lệnh mở barrier vào"""
+        if self.serial_port and self.serial_port.is_open:
+            self.serial_port.write("OPEN_BARRIER_IN\n".encode())
+            return True
+        return False
+        
+    def open_barrier_out(self):
+        """Gửi lệnh mở barrier ra"""
+        if self.serial_port and self.serial_port.is_open:
+            self.serial_port.write("OPEN_BARRIER_OUT\n".encode())
+            return True
+        return False

@@ -2,8 +2,212 @@
 const socket = io();
 
 let currentSearchValue = ''; // Thêm biến để lưu từ khóa tìm kiếm hiện tại
+let currentPage = 1;
+let currentSearch = '';
 
-// Xử lý chuyển tab
+function loadVehicleData(page = currentPage) {
+    let url = `/get_vehicle_data?page=${page}`;
+    if (currentSearch) {
+        url += `&search=${encodeURIComponent(currentSearch)}`;
+    }
+
+    fetch(url)
+        .then(response => response.json())
+        .then(response => {
+            const tableBody = document.querySelector('#vehicle-table tbody');
+            tableBody.innerHTML = '';
+
+            response.data.forEach((vehicle, index) => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${(page - 1) * 20 + index + 1}</td>
+                    <td>${vehicle.plate_number || 'N/A'}</td>
+                    <td>${vehicle.rfid || 'N/A'}</td>
+                    <td>${formatDateTime(vehicle.time_in)}</td>
+                    <td>${vehicle.status === 'IN' 
+                        ? `<button onclick="handleManualOut('${vehicle.rfid}', '${vehicle.plate_number}')" 
+                       class="manual-out-btn">Cho ra</button>`
+                        : formatDateTime(vehicle.time_out)}</td>
+                    <td data-status="${vehicle.status}">${vehicle.status}</td>
+                `;
+                tableBody.appendChild(row);
+            });
+
+            currentPage = response.current_page;
+            updatePagination(response.current_page, response.total_pages);
+        });
+}
+
+function updatePagination(currentPage, totalPages) {
+    const pageNumbers = document.getElementById('page-numbers');
+    const prevBtn = document.getElementById('prev-page');
+    const nextBtn = document.getElementById('next-page');
+    
+    pageNumbers.innerHTML = '';
+    prevBtn.disabled = currentPage === 1;
+    nextBtn.disabled = currentPage === totalPages;
+
+    function addPageButton(num) {
+        const pageBtn = document.createElement('button');
+        pageBtn.className = `page-number ${num === currentPage ? 'active' : ''}`;
+        pageBtn.textContent = num;
+        pageBtn.onclick = () => loadVehicleData(num);
+        pageNumbers.appendChild(pageBtn);
+    }
+
+    function addEllipsis() {
+        const span = document.createElement('span');
+        span.className = 'ellipsis';
+        span.textContent = '...';
+        pageNumbers.appendChild(span);
+    }
+
+    // Always show first page
+    addPageButton(1);
+
+    if (totalPages <= 5) {
+        // Show all pages if total is 5 or less
+        for (let i = 2; i <= totalPages; i++) {
+            addPageButton(i);
+        }
+    } else {
+        if (currentPage <= 3) {
+            // Near the start
+            for (let i = 2; i <= 4; i++) {
+                addPageButton(i);
+            }
+            addEllipsis();
+            addPageButton(totalPages);
+        } else if (currentPage >= totalPages - 2) {
+            // Near the end
+            addEllipsis();
+            for (let i = totalPages - 3; i <= totalPages; i++) {
+                addPageButton(i);
+            }
+        } else {
+            // Middle - show current page and neighbors
+            addEllipsis();
+            for (let i = currentPage - 1; i <= currentPage + 1; i++) {
+                addPageButton(i);
+            }
+            addEllipsis();
+            addPageButton(totalPages);
+        }
+    }
+}
+
+// Add event listeners for prev/next buttons
+document.getElementById('prev-page').addEventListener('click', () => {
+    if (currentPage > 1) {
+        loadVehicleData(--currentPage);
+    }
+});
+
+document.getElementById('next-page').addEventListener('click', () => {
+    currentPage++;
+    loadVehicleData(currentPage);
+});
+
+// Add new function to update recent logs
+function updateRecentLogs() {
+    fetch('/get_recent_logs')
+        .then(response => response.json())
+        .then(data => {
+            const recentLogsBody = document.querySelector('#recent-logs-table tbody');
+            recentLogsBody.innerHTML = '';
+
+            data.forEach(vehicle => {
+                const row = document.createElement('tr');
+                const time = vehicle.status === 'IN' ? vehicle.time_in : vehicle.time_out;
+                
+                row.innerHTML = `
+                    <td>${vehicle.plate_number || 'N/A'}</td>
+                    <td>${formatDateTime(time)}</td>
+                    <td class="${vehicle.status === 'IN' ? 'status-in' : 'status-out'}">${vehicle.status}</td>
+                `;
+                recentLogsBody.appendChild(row);
+            });
+        });
+}
+
+function updateLatestVehicles() {
+    fetch('/get_latest_vehicles')
+        .then(response => response.json())
+        .then(data => {
+            const latestInInput = document.getElementById('latest-in');
+            const latestOutInput = document.getElementById('latest-out');
+
+            if (data.latest_in) {
+                latestInInput.value = data.latest_in.plate_number;
+            } else {
+                latestInInput.value = 'N/A';
+            }
+
+            if (data.latest_out) {
+                latestOutInput.value = data.latest_out.plate_number;
+            } else {
+                latestOutInput.value = 'N/A';
+            }
+        });
+}
+
+// Add handler for manual exit
+function handleManualOut(rfid, plateNumber) {
+    if (confirm(`Xác nhận cho xe ${plateNumber} ra?`)) {
+        fetch('/manual_vehicle_out', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                rfid: rfid,
+                plate_number: plateNumber
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                loadVehicleData(currentPage);
+                updateRecentLogs();
+                alert('Đã cho xe ra thành công!');
+            } else {
+                alert('Có lỗi xảy ra: ' + data.message);
+            }
+        });
+    }
+}
+
+// Hàm format datetime
+function formatDateTime(dateString) {
+    if (!dateString) return 'N/A';
+    const date = new Date(dateString);
+    return date.toLocaleString('vi-VN');
+}
+
+// Cập nhật dữ liệu mỗi 5 giây
+setInterval(loadVehicleData, 5000);
+
+// Socket.IO event handlers
+socket.on('connect', () => {
+    console.log('Connected to server');
+});
+
+socket.on('plate_update', function(data) {
+    const plateElement = document.getElementById('plate-number');
+    if (plateElement) {
+        plateElement.textContent = data.plate_number || 'Không phát hiện';
+    }
+    // Cập nhật lại bảng khi có biển số mới
+    loadVehicleData(currentPage); // Keep current page when refreshing
+    updateRecentLogs(); // Update logs when new data arrives
+    updateLatestVehicles();
+});
+
+// Thêm socket listener cho thông báo lỗi
+socket.on('error', (data) => {
+    alert(data.message);
+});
+
 document.addEventListener('DOMContentLoaded', function() {
     const tabs = document.querySelectorAll('.nav-btn');
     const sections = document.querySelectorAll('.content-section');
@@ -54,73 +258,48 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    // Xử lý nút mở barrier vào
+    const barrierInButton = document.getElementById('barrier-in-control');
+    if (barrierInButton) {
+        barrierInButton.addEventListener('click', function() {
+            this.disabled = true;
+            socket.emit('open_barrier_in');
+            setTimeout(() => {
+                this.disabled = false;
+            }, 3000);
+        });
+    }
+
+    // Xử lý nút mở barrier ra
+    const barrierOutButton = document.getElementById('barrier-out-control');
+    if (barrierOutButton) {
+        barrierOutButton.addEventListener('click', function() {
+            this.disabled = true;
+            socket.emit('open_barrier_out');
+            setTimeout(() => {
+                this.disabled = false;
+            }, 3000);
+        });
+    }
+
     // Thay thế cả 2 event listener cũ của search-btn và search-input bằng code mới
     const searchInput = document.getElementById('search-input');
     
     searchInput.addEventListener('input', function(e) {
-        currentSearchValue = this.value.trim().toLowerCase();
-        const tableRows = document.querySelectorAll('#vehicle-table tbody tr');
-        
-        tableRows.forEach(row => {
-            const plateNumber = row.querySelector('td:nth-child(2)').textContent.toLowerCase();
-            if (plateNumber.includes(currentSearchValue)) {
-                row.style.display = '';
-            } else {
-                row.style.display = 'none';
-            }
-        });
+        currentSearch = this.value.trim();
+        currentPage = 1; // Reset to first page when searching
+        loadVehicleData();
     });
-});
 
-// Sửa hàm load dữ liệu xe từ server
-function loadVehicleData() {
-    fetch('/get_vehicle_data')
-        .then(response => response.json())
-        .then(data => {
-            const tableBody = document.querySelector('#vehicle-table tbody');
-            tableBody.innerHTML = ''; // Xóa dữ liệu cũ
+    // Initial load of recent logs
+    updateRecentLogs();
+    
+    // Update recent logs every 30 seconds
+    setInterval(updateRecentLogs, 30000);
 
-            data.forEach((vehicle, index) => {
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td>${index + 1}</td>
-                    <td>${vehicle.plate_number || 'N/A'}</td>
-                    <td>${formatDateTime(vehicle.time_in)}</td>
-                    <td>${vehicle.time_out ? formatDateTime(vehicle.time_out) : 'N/A'}</td>
-                    <td>${vehicle.status}</td>
-                `;
-                
-                // Ẩn row nếu không khớp với từ khóa tìm kiếm
-                if (currentSearchValue && !vehicle.plate_number?.toLowerCase().includes(currentSearchValue.toLowerCase())) {
-                    row.style.display = 'none';
-                }
-                
-                tableBody.appendChild(row);
-            });
-        })
-        .catch(error => console.error('Error:', error));
-}
-
-// Hàm format datetime
-function formatDateTime(dateString) {
-    if (!dateString) return 'N/A';
-    const date = new Date(dateString);
-    return date.toLocaleString('vi-VN');
-}
-
-// Cập nhật dữ liệu mỗi 5 giây
-setInterval(loadVehicleData, 5000);
-
-// Socket.IO event handlers
-socket.on('connect', () => {
-    console.log('Connected to server');
-});
-
-socket.on('plate_update', (data) => {
-    const plateElement = document.getElementById('plate-number');
-    if (plateElement) {
-        plateElement.textContent = data.plate_number || 'Không phát hiện';
-    }
-    // Cập nhật lại bảng khi có biển số mới
-    loadVehicleData();
+    // Initial update
+    updateLatestVehicles();
+    
+    // Update every 30 seconds
+    setInterval(updateLatestVehicles, 30000);
 });

@@ -7,7 +7,7 @@
 
 // RFID Pins - Exit Gate  
 #define RFID_OUT_SS_PIN    5    // SPI SS pin exit
-#define RFID_OUT_RST_PIN   15   // Reset pin exit
+#define RFID_OUT_RST_PIN   17   // Reset pin exit
 
 // Servo Pins
 #define SERVO_IN_PIN       15   // Servo entrance gate

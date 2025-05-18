@@ -44,7 +44,7 @@
                 
                 <!-- Camera ra -->
                 <div class="camera-box">
-                    <h2>CAMERA VÀO</h2>
+                    <h2>CAMERA RA</h2>
                     <div class="camera-view">
                         <img src="{{ url_for('video_feed') }}" width="280">
                     </div>
@@ -61,34 +61,40 @@
                 <!-- Phần thông tin -->
                 <div class="info-box">
                     <div class="vehicle-info">
-                        <label>SỐ XE:</label>
+                        <label>SỐ XE HIỆN TẠI:</label>
                         <input type="text" id="car-count" readonly value="0" class="green-bg">
                     </div>
                     <div class="vehicle-info">
-                        <label>VÀO:</label>
-                        <input type="text" readonly>
+                        <label>XE VÀO GẦN NHẤT:</label>
+                        <input type="text" id="latest-in" readonly>
                     </div>
                     <div class="vehicle-info">
-                        <label>RA:</label>
-                        <input type="text" readonly>
+                        <label>XE RA GẦN NHẤT:</label>
+                        <input type="text" id="latest-out" readonly>
                     </div>
-                    <div class="vehicle-info">
-                        <label>TỔNG:</label>
-                        <input type="text" readonly>
-                    </div>
-                    <div class="vehicle-info">
-                        <label>TIỀN:</label>
-                        <input type="text" readonly>
-                    </div>
-                    
+
                     <!-- Nút điều khiển -->
                     <div class="control-buttons">
-                        <button id="manual-btn" class="blue-btn">THỦ CÔNG</button>
-                        <button id="auto-btn" class="blue-btn">TỰ ĐỘNG</button>
-                        <button id="in-btn" class="red-btn">VÀO</button>
-                        <button id="out-btn" class="red-btn">RA</button>
-                        <button id="barrier-control" class="red-btn">MỞ BARRIER</button>
+                        <button id="barrier-in-control" class="red-btn">MỞ BARRIER VÀO</button>
+                        <button id="barrier-out-control" class="red-btn">MỞ BARRIER RA</button>
                         <button id="exit-btn" class="exit-btn">THOÁT</button>
+                    </div>
+
+                    <!-- Recent logs table -->
+                    <div class="recent-logs">
+                        <h3>Lịch sử gần đây</h3>
+                        <table id="recent-logs-table">
+                            <thead>
+                                <tr>
+                                    <th>Biển số</th>
+                                    <th>Thời gian</th>
+                                    <th>Trạng thái</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Data will be inserted by JavaScript -->
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </div>
@@ -98,26 +104,30 @@
     <!-- Table content -->
     <div id="table-content" class="content-section">
         <div class="table-container">
-            <div class="table-header">
-                <h2>Danh sách xe</h2>
-                <div class="search-box">
-                    <input type="text" id="search-input" placeholder="Nhập biển số xe...">
-                </div>
+            <div class="search-box">
+                <input type="text" id="search-input" placeholder="Nhập biển số xe...">
             </div>
             <table id="vehicle-table">
                 <thead>
                     <tr>
                         <th>STT</th>
                         <th>Biển số</th>
+                        <th>RFID</th>
                         <th>Thời gian vào</th>
                         <th>Thời gian ra</th>
                         <th>Trạng thái</th>
                     </tr>
                 </thead>
                 <tbody>
-                    <!-- Dữ liệu sẽ được JavaScript điền vào đây -->
+                    <!-- Data will be inserted here by JavaScript -->
                 </tbody>
             </table>
+            
+            <div class="pagination">
+                <button id="prev-page" class="page-btn">&laquo; Trước</button>
+                <div id="page-numbers"></div>
+                <button id="next-page" class="page-btn">Sau &raquo;</button>
+            </div>
         </div>
     </div>
 
