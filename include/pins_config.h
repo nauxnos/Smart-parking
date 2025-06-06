@@ -13,9 +13,10 @@
 #define SERVO_IN_PIN       15   // Servo entrance gate
 #define SERVO_OUT_PIN      12   // Servo exit gate
 
-// IR Sensors
-#define IR_IN_SENSOR       14   // IR sensor entrance
-#define IR_OUT_SENSOR      27   // IR sensor exit
+// IR Sensor pins
+#define IR_SENSOR1_PIN 14  // D5
+#define IR_SENSOR2_PIN 27  // D6
+#define IR_SENSOR3_PIN 13  // D7
 
 // Status LEDs
 #define LED_IN_READY       32   // Entrance gate ready

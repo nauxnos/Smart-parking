@@ -2,6 +2,7 @@
 #include "RFID_Sensor.h"
 #include "Servo.h"
 #include "pins_config.h"
+#include "IR_Sensor.h"
 
 // Thêm thư viện FreeRTOS
 #include "freertos/FreeRTOS.h"
@@ -12,6 +13,11 @@ RFID_Sensor rfid_in;
 RFID_Sensor rfid_out;
 servoMotor barrier_in;
 servoMotor barrier_out;
+
+// Khởi tạo cảm biến hồng ngoại cho 3 vị trí đỗ xe
+IR_Sensor ir_sensor1(IR_SENSOR1_PIN, true);  // true nếu logic đảo
+IR_Sensor ir_sensor2(IR_SENSOR2_PIN, true);
+IR_Sensor ir_sensor3(IR_SENSOR3_PIN, true);
 
 const unsigned long BARRIER_DELAY = 3000; // 3 giây
 
@@ -52,6 +58,12 @@ void setup() {
     barrier_in.init(SERVO_IN_PIN);
     barrier_out.init(SERVO_OUT_PIN);
     
+    // Khởi tạo cảm biến hồng ngoại
+    ir_sensor1.begin();
+    ir_sensor2.begin();
+    ir_sensor3.begin();
+    
+    pinMode(14, INPUT);
     // Tạo task cho mỗi barrier
     xTaskCreatePinnedToCore(
         barrierInTask,   // Task function
@@ -97,5 +109,20 @@ void loop() {
         }
     }
     
+    // Kiểm tra trạng thái cảm biến và gửi cập nhật
+    if (ir_sensor1.stateChanged()) {
+        Serial.print("SLOT1:");
+        Serial.println(ir_sensor1.getStatus() ? "1" : "0");
+    }
+    
+    if (ir_sensor2.stateChanged()) {
+        Serial.print("SLOT2:");
+        Serial.println(ir_sensor2.getStatus() ? "1" : "0");
+    }
+    
+    if (ir_sensor3.stateChanged()) {
+        Serial.print("SLOT3:");
+        Serial.println(ir_sensor3.getStatus() ? "1" : "0");
+    }
     delay(50);
 }
