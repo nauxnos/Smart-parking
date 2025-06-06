@@ -23,6 +23,13 @@ serial = None
 plate_recognize = None
 db_handler = None  # Thêm biến database handler
 
+# Thêm biến lưu trạng thái các slot
+parking_slots = {
+    "slot1": 0,  # 0: trống, 1: có xe
+    "slot2": 0,
+    "slot3": 0
+}
+
 @app.route('/')
 def home():
     if 'username' in session:
@@ -118,12 +125,21 @@ def get_latest_vehicles():
         })
     return jsonify({'latest_in': None, 'latest_out': None})
 
+# Thêm route để lấy trạng thái parking slots
+@app.route('/get_parking_slots')
+def get_parking_slots():
+    """Lấy trạng thái hiện tại của các slot đỗ xe"""
+    return jsonify(parking_slots)
+
 @socketio.on('connect')
 def handle_connect():
     logging.info('Client kết nối thành công')
     # Gửi biển số hiện tại (nếu có) cho client mới kết nối
     if camera and hasattr(camera, 'last_plate_number') and camera.last_plate_number:
         emit('plate_update', {'plate_number': camera.last_plate_number})
+    
+    # Gửi trạng thái parking slots hiện tại cho client mới
+    emit('parking_slots_update', parking_slots)
 
 @socketio.on('open_barrier')
 def handle_open_barrier():
@@ -152,6 +168,15 @@ def handle_open_barrier_out():
         return {'status': 'success'}
     return {'status': 'error', 'message': 'Serial không khả dụng'}
 
+def update_parking_slot(slot_id, status):
+    """Cập nhật trạng thái slot và gửi tới client"""
+    global parking_slots
+    if slot_id in parking_slots:
+        parking_slots[slot_id] = status
+        logging.info(f"Cập nhật {slot_id}: {'Có xe' if status == 1 else 'Trống'}")
+        # Gửi cập nhật tới tất cả client
+        socketio.emit('parking_slots_update', parking_slots)
+
 def handle_serial():
     """Xử lý dữ liệu từ Serial"""
     while True:
@@ -162,8 +187,24 @@ def handle_serial():
                     rfid = None
                     direction = None
                     
+                    # Xử lý cập nhật trạng thái parking slot
+                    if "SLOT" in response and ":" in response:
+                        try:
+                            # Ví dụ: "SLOT1:1" hoặc "SLOT2:0"
+                            slot_info = response.strip()
+                            slot_name, slot_status = slot_info.split(":")
+                            slot_number = slot_name.lower()  # slot1, slot2, slot3
+                            status = int(slot_status)
+                            
+                            # Cập nhật trạng thái slot
+                            update_parking_slot(slot_number, status)
+                            continue  # Tiếp tục vòng lặp, không xử lý RFID
+                            
+                        except (ValueError, IndexError) as e:
+                            logging.warning(f"Lỗi parse slot data: {response} - {e}")
+                    
                     # Xử lý RFID vào
-                    if "ENTRY" in response:
+                    elif "ENTRY" in response:
                         direction = "IN"
                         rfid = response.split("ENTRY - Card UID: ")[1].strip()
                         logging.info(f"Phát hiện thẻ RFID vào: {rfid}")

@@ -151,6 +151,44 @@ function updateLatestVehicles() {
         });
 }
 
+// Thêm hàm cập nhật trạng thái parking slots
+function updateParkingSlots(slotsData) {
+    // Cập nhật từng slot
+    Object.keys(slotsData).forEach(slotId => {
+        const slotElement = document.getElementById(slotId);
+        const status = slotsData[slotId];
+        
+        if (slotElement) {
+            if (status === 1) {
+                // Có xe - thêm class occupied
+                slotElement.classList.add('occupied');
+            } else {
+                // Trống - xóa class occupied
+                slotElement.classList.remove('occupied');
+            }
+        }
+    });
+    
+    // Cập nhật số xe hiện tại
+    const occupiedCount = Object.values(slotsData).filter(status => status === 1).length;
+    const carCountElement = document.getElementById('car-count');
+    if (carCountElement) {
+        carCountElement.value = occupiedCount;
+    }
+}
+
+// Hàm load trạng thái parking slots từ server
+function loadParkingSlots() {
+    fetch('/get_parking_slots')
+        .then(response => response.json())
+        .then(slotsData => {
+            updateParkingSlots(slotsData);
+        })
+        .catch(error => {
+            console.error('Lỗi khi load parking slots:', error);
+        });
+}
+
 // Add handler for manual exit
 function handleManualOut(rfid, plateNumber) {
     if (confirm(`Xác nhận cho xe ${plateNumber} ra?`)) {
@@ -201,6 +239,12 @@ socket.on('plate_update', function(data) {
     loadVehicleData(currentPage); // Keep current page when refreshing
     updateRecentLogs(); // Update logs when new data arrives
     updateLatestVehicles();
+});
+
+// Thêm socket listener cho cập nhật parking slots
+socket.on('parking_slots_update', function(slotsData) {
+    console.log('Nhận cập nhật parking slots:', slotsData);
+    updateParkingSlots(slotsData);
 });
 
 // Thêm socket listener cho thông báo lỗi
@@ -302,4 +346,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Update every 30 seconds
     setInterval(updateLatestVehicles, 30000);
+
+    // Load parking slots khi trang được tải
+    loadParkingSlots();
 });
