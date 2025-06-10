@@ -12,9 +12,12 @@ private:
     int currentAngle;
     bool isOpen;
     IR_Sensor ir_sensor;
+    unsigned long openTimer;
+    bool timerActive;
     
 public:
-    servoMotor() : currentAngle(0), isOpen(false), ir_sensor(), throughStatus(0) {}
+    servoMotor() : currentAngle(0), isOpen(false), ir_sensor(), throughStatus(0), 
+                  openTimer(0), timerActive(false) {}
     
     void init(int IO, int ir_pin);
     void controlAngle(int angle);
@@ -22,8 +25,14 @@ public:
     void closeBarrier();
     bool isBarrierOpen() { return isOpen; }
     int getCurrentAngle() { return currentAngle; }
-    void checkIRSensor();
+    bool checkIRSensor();
+    void updateTimer();
+    bool isTimerExpired();
+    void startTimer();
+    void stopTimer();
+    
     int throughStatus;
+    static const unsigned long BARRIER_TIMEOUT = 5000; // 5 giây
 };
 
 #endif

@@ -329,7 +329,7 @@ document.addEventListener('DOMContentLoaded', function() {
             console.log('Sent open barrier in command'); // Debug log
             setTimeout(() => {
                 this.disabled = false;
-            }, 3000);
+            }, 5000); // Tăng thời gian khóa lên 5 giây
         });
     }
 
@@ -342,7 +342,7 @@ document.addEventListener('DOMContentLoaded', function() {
             console.log('Sent open barrier out command'); // Debug log
             setTimeout(() => {
                 this.disabled = false;
-            }, 3000);
+            }, 5000);
         });
     }
 
