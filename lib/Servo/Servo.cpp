@@ -1,6 +1,6 @@
 #include "Servo.h"
 
-void servoMotor::init(int IO) {
+void servoMotor::init(int IO, int ir_pin) {
     this->Servo_motor.attach(IO);
     this->currentAngle = 45;
     this->isOpen = false;
@@ -37,5 +37,14 @@ void servoMotor::closeBarrier() {
         this->controlAngle(45);
     } else {
         Serial.println("[SERVO] Barrier already closed");
+    }
+}
+
+void servoMotor::checkIRSensor() {
+    if(this->ir_sensor.stateChanged() && this->throughStatus == 0){
+        this->throughStatus = 1;
+    }
+    else if(this->ir_sensor.stateChanged() && this->throughStatus == 1){
+        this->throughStatus = 2;
     }
 }

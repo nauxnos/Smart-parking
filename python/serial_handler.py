@@ -84,13 +84,21 @@ class SerialHandler:
     def open_barrier_in(self):
         """Gửi lệnh mở barrier vào"""
         if self.serial_port and self.serial_port.is_open:
-            self.serial_port.write("OPEN_BARRIER_IN\n".encode())
-            return True
+            try:
+                self.serial_port.write("OPEN_BARRIER_IN\n".encode())
+                self.logger.info("Đã gửi lệnh mở barrier vào")
+                return True
+            except Exception as e:
+                self.logger.error(f"Lỗi khi gửi lệnh mở barrier vào: {e}")
         return False
         
     def open_barrier_out(self):
         """Gửi lệnh mở barrier ra"""
         if self.serial_port and self.serial_port.is_open:
-            self.serial_port.write("OPEN_BARRIER_OUT\n".encode())
-            return True
+            try:
+                self.serial_port.write("OPEN_BARRIER_OUT\n".encode())
+                self.logger.info("Đã gửi lệnh mở barrier ra")
+                return True
+            except Exception as e:
+                self.logger.error(f"Lỗi khi gửi lệnh mở barrier ra: {e}")
         return False

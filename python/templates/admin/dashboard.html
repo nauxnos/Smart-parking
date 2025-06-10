@@ -30,15 +30,14 @@
                 <div class="camera-box">
                     <h2>CAMERA VÀO</h2>
                     <div class="camera-view">
-                        <img src="{{ url_for('video_feed') }}" width="280">
+                        <img src="{{ url_for('video_feed', camera_id='in') }}" width="280">
                     </div>
-                    <!-- Thêm phần hiển thị ảnh biển số -->
                     <div class="plate-view">
                         <h3>Biển số xe</h3>
-                        <img src="{{ url_for('captured_feed') }}" width="180">
+                        <img src="{{ url_for('captured_feed', camera_id='in') }}" width="180">
                     </div>
                     <div class="plate-input">
-                        <p>Biển số: <span id="plate-number">Chờ phát hiện...</span></p>
+                        <p>Biển số: <span id="plate-number-in">Chờ phát hiện...</span></p>
                     </div>
                 </div>
                 
@@ -46,15 +45,14 @@
                 <div class="camera-box">
                     <h2>CAMERA RA</h2>
                     <div class="camera-view">
-                        <img src="{{ url_for('video_feed') }}" width="280">
+                        <img src="{{ url_for('video_feed', camera_id='out') }}" width="280">
                     </div>
-                    <!-- Thêm phần hiển thị ảnh biển số -->
                     <div class="plate-view">
                         <h3>Biển số xe</h3>
-                        <img src="{{ url_for('captured_feed') }}" width="180">
+                        <img src="{{ url_for('captured_feed', camera_id='out') }}" width="180">
                     </div>
                     <div class="plate-input">
-                        <p>Biển số: <span id="plate-number">Chờ phát hiện...</span></p>
+                        <p>Biển số: <span id="plate-number-out">Chờ phát hiện...</span></p>
                     </div>
                 </div>
                 

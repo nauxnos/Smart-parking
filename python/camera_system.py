@@ -5,56 +5,79 @@ import numpy as np
 class CameraSystem:
 
     def __init__(self):
-        self.camera = cv2.VideoCapture(0)
-        if not self.camera.isOpened():
-            raise RuntimeError("Không thể mở camera")
+        # Khởi tạo 2 camera
+        self.cameras = {
+            'in': cv2.VideoCapture(0),  # Camera vào
+            'out': cv2.VideoCapture(1)  # Camera ra
+        }
+        
+        # Kiểm tra kết nối camera
+        for camera_id, camera in self.cameras.items():
+            if not camera.isOpened():
+                raise RuntimeError(f"Không thể mở camera {camera_id}")
+                
         self.logger = logging.getLogger("Camera")
-        self.last_capture = None
-        self.last_crop = None  # Thêm biến lưu ảnh đã cắt
+        self.last_captures = {
+            'in': None,
+            'out': None
+        }
+        self.last_crops = {
+            'in': None,
+            'out': None
+        }
+        self.last_plate_numbers = {
+            'in': None,
+            'out': None
+        }
+        
         # Thêm kích thước cố định cho ảnh
-        self.CAPTURE_WIDTH = 320   # Thay đổi từ 640 xuống 320
-        self.CAPTURE_HEIGHT = 240  # Thay đổi từ 480 xuống 240
+        self.CAPTURE_WIDTH = 320
+        self.CAPTURE_HEIGHT = 240
         self.blank_image = np.ones((self.CAPTURE_HEIGHT, self.CAPTURE_WIDTH, 3), 
-                              dtype=np.uint8) * 255  # Tạo ảnh trắng
+                              dtype=np.uint8) * 255
 
     def resize_image(self, image):
         """Resize ảnh về kích thước cố định"""
         return cv2.resize(image, (self.CAPTURE_WIDTH, self.CAPTURE_HEIGHT))
 
-    def capture_image(self):
-        """Chụp và lưu vào bộ nhớ"""
-        ret, frame = self.camera.read()
+    def capture_image(self, camera_id):
+        """Chụp và lưu vào bộ nhớ cho camera cụ thể"""
+        camera = self.cameras.get(camera_id)
+        if not camera:
+            return False
+            
+        ret, frame = camera.read()
         if ret:
-            # Resize ảnh về kích thước cố định
             frame = self.resize_image(frame)
-            self.last_capture = frame.copy()
-            self.logger.info(f"Đã chụp ảnh {self.CAPTURE_WIDTH}x{self.CAPTURE_HEIGHT}")
+            self.last_captures[camera_id] = frame.copy()
+            self.logger.info(f"Đã chụp ảnh {camera_id} {self.CAPTURE_WIDTH}x{self.CAPTURE_HEIGHT}")
             return True
         return False
 
-    def generate_frames(self):
-        """Stream camera"""
+    def generate_frames(self, camera_id):
+        """Stream camera cụ thể"""
+        camera = self.cameras.get(camera_id)
+        if not camera:
+            return
+            
         while True:
-            ret, frame = self.camera.read()
+            ret, frame = camera.read()
             if not ret:
                 continue
-            # Resize frame stream
             frame = self.resize_image(frame)
             ret, buffer = cv2.imencode('.jpg', frame)
             frame = buffer.tobytes()
             yield (b'--frame\r\n'
                    b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
 
-    def generate_capture(self):
-        """Stream ảnh đã chụp"""
+    def generate_capture(self, camera_id):
+        """Stream ảnh đã chụp cho camera cụ thể"""
         while True:
-            if self.last_crop is not None:
-                # Resize ảnh đã cắt
-                resized_crop = self.resize_image(self.last_crop)
+            if self.last_crops[camera_id] is not None:
+                resized_crop = self.resize_image(self.last_crops[camera_id])
                 ret, buffer = cv2.imencode('.jpg', resized_crop)
                 frame = buffer.tobytes()
             else:
-                # Trả về ảnh trắng nếu không có biển số
                 ret, buffer = cv2.imencode('.jpg', self.blank_image)
                 frame = buffer.tobytes()
                 
@@ -62,5 +85,7 @@ class CameraSystem:
                    b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
 
     def cleanup(self):
-        if self.camera.isOpened():
-            self.camera.release()
+        """Đóng tất cả camera"""
+        for camera in self.cameras.values():
+            if camera.isOpened():
+                camera.release()

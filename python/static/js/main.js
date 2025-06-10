@@ -231,15 +231,33 @@ socket.on('connect', () => {
 });
 
 socket.on('plate_update', function(data) {
-    const plateElement = document.getElementById('plate-number');
+    console.log('Received plate update:', data); // Debug log
+    
+    // Cập nhật biển số cho camera tương ứng
+    const plateElement = document.getElementById(`plate-number-${data.camera_id}`);
     if (plateElement) {
         plateElement.textContent = data.plate_number || 'Không phát hiện';
+        console.log(`Updated plate number for camera ${data.camera_id}:`, data.plate_number); // Debug log
     }
-    // Cập nhật lại bảng khi có biển số mới
-    loadVehicleData(currentPage); // Keep current page when refreshing
-    updateRecentLogs(); // Update logs when new data arrives
+    
+    // Cập nhật lại bảng và thông tin
+    loadVehicleData(currentPage);
+    updateRecentLogs();
     updateLatestVehicles();
 });
+
+// Thêm hàm để cập nhật trạng thái barrier
+function updateBarrierStatus(status) {
+    const barrierInBtn = document.getElementById('barrier-in-control');
+    const barrierOutBtn = document.getElementById('barrier-out-control');
+    
+    if (barrierInBtn) {
+        barrierInBtn.disabled = status === 'opening';
+    }
+    if (barrierOutBtn) {
+        barrierOutBtn.disabled = status === 'opening';
+    }
+}
 
 // Thêm socket listener cho cập nhật parking slots
 socket.on('parking_slots_update', function(slotsData) {
@@ -308,6 +326,7 @@ document.addEventListener('DOMContentLoaded', function() {
         barrierInButton.addEventListener('click', function() {
             this.disabled = true;
             socket.emit('open_barrier_in');
+            console.log('Sent open barrier in command'); // Debug log
             setTimeout(() => {
                 this.disabled = false;
             }, 3000);
@@ -320,6 +339,7 @@ document.addEventListener('DOMContentLoaded', function() {
         barrierOutButton.addEventListener('click', function() {
             this.disabled = true;
             socket.emit('open_barrier_out');
+            console.log('Sent open barrier out command'); // Debug log
             setTimeout(() => {
                 this.disabled = false;
             }, 3000);

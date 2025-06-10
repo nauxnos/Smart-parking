@@ -13,6 +13,7 @@ private:
     bool currentState;
 
 public:
+    IR_Sensor() : pin(0), inverted(false), debounceDelay(0), lastDebounceTime(0), lastState(false), currentState(false) {}
     IR_Sensor(uint8_t sensorPin, bool invertLogic = false);
     void begin();
     void updateStatus();

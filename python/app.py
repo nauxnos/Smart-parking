@@ -7,6 +7,8 @@ from camera_system import CameraSystem
 from serial_handler import SerialHandler
 from plate_regconize import LicensePlateDetector
 from database_handler import DatabaseHandler
+import cv2
+import numpy as np
 
 # Thiết lập logging
 logging.basicConfig(
@@ -53,20 +55,20 @@ def logout():
     session.pop('username', None)
     return redirect(url_for('login'))
 
-@app.route('/video_feed')
-def video_feed():
-    return Response(camera.generate_frames(),
+@app.route('/video_feed/<camera_id>')
+def video_feed(camera_id):
+    return Response(camera.generate_frames(camera_id),
                    mimetype='multipart/x-mixed-replace; boundary=frame')
 
-@app.route('/captured_feed')
-def captured_feed():
-    return Response(camera.generate_capture(),
+@app.route('/captured_feed/<camera_id>')
+def captured_feed(camera_id):
+    return Response(camera.generate_capture(camera_id),
                    mimetype='multipart/x-mixed-replace; boundary=frame')
 
-@app.route('/get_plate_number')
-def get_plate_number():
-    if camera and hasattr(camera, 'last_plate_number'):
-        return jsonify({'plate_number': camera.last_plate_number})
+@app.route('/get_plate_number/<camera_id>')
+def get_plate_number(camera_id):
+    if camera and hasattr(camera, 'last_plate_numbers'):
+        return jsonify({'plate_number': camera.last_plate_numbers.get(camera_id)})
     return jsonify({'plate_number': None})
 
 @app.route('/get_vehicle_data')
@@ -135,8 +137,9 @@ def get_parking_slots():
 def handle_connect():
     logging.info('Client kết nối thành công')
     # Gửi biển số hiện tại (nếu có) cho client mới kết nối
-    if camera and hasattr(camera, 'last_plate_number') and camera.last_plate_number:
-        emit('plate_update', {'plate_number': camera.last_plate_number})
+    if camera and hasattr(camera, 'last_plate_numbers') and any(camera.last_plate_numbers.values()):
+        for camera_id, plate_number in camera.last_plate_numbers.items():
+            emit('plate_update', {'plate_number': plate_number, 'camera_id': camera_id})
     
     # Gửi trạng thái parking slots hiện tại cho client mới
     emit('parking_slots_update', parking_slots)
@@ -186,64 +189,75 @@ def handle_serial():
                 if response:
                     rfid = None
                     direction = None
+                    camera_id = None
                     
                     # Xử lý cập nhật trạng thái parking slot
                     if "SLOT" in response and ":" in response:
                         try:
-                            # Ví dụ: "SLOT1:1" hoặc "SLOT2:0"
                             slot_info = response.strip()
                             slot_name, slot_status = slot_info.split(":")
-                            slot_number = slot_name.lower()  # slot1, slot2, slot3
+                            slot_number = slot_name.lower()
                             status = int(slot_status)
-                            
-                            # Cập nhật trạng thái slot
                             update_parking_slot(slot_number, status)
-                            continue  # Tiếp tục vòng lặp, không xử lý RFID
-                            
+                            continue
                         except (ValueError, IndexError) as e:
                             logging.warning(f"Lỗi parse slot data: {response} - {e}")
                     
                     # Xử lý RFID vào
                     elif "ENTRY" in response:
                         direction = "IN"
+                        camera_id = "in"
                         rfid = response.split("ENTRY - Card UID: ")[1].strip()
                         logging.info(f"Phát hiện thẻ RFID vào: {rfid}")
                     
                     # Xử lý RFID ra
                     elif "EXIT" in response:
                         direction = "OUT"
+                        camera_id = "out"
                         rfid = response.split("EXIT - Card UID: ")[1].strip()
                         logging.info(f"Phát hiện thẻ RFID ra: {rfid}")
                     
-                    if rfid and direction:
-                        if camera.capture_image():
-                            license_plate, crop_img, ret = findPlate(camera.last_capture)
+                    if rfid and direction and camera_id:
+                        if camera.capture_image(camera_id):
+                            license_plate, crop_img, ret = findPlate(camera.last_captures[camera_id])
                             
                             if ret and crop_img is not None:
-                                camera.last_crop = crop_img
-                                camera.last_plate_number = license_plate
+                                camera.last_crops[camera_id] = crop_img
+                                camera.last_plate_numbers[camera_id] = license_plate
                                 
-                                # Xử lý xe qua DatabaseHandler với trạng thái cụ thể
+                                # Xử lý xe qua DatabaseHandler
                                 result = db_handler.process_vehicle(rfid, license_plate, direction)
                                 
                                 if result['success']:
+                                    # Gửi lệnh mở barrier tương ứng
                                     if direction == 'IN':
                                         serial.open_barrier_in()
+                                        logging.info("Đã gửi lệnh mở barrier vào")
                                     else:
                                         serial.open_barrier_out()
+                                        logging.info("Đã gửi lệnh mở barrier ra")
                                         
+                                    # Gửi cập nhật biển số cho client
                                     socketio.emit('plate_update', {
-                                        'plate_number': license_plate, 
+                                        'plate_number': license_plate,
+                                        'camera_id': camera_id,
                                         'status': direction
                                     })
+                                    
+                                    # Cập nhật logs và thông tin mới nhất
+                                    updateRecentLogs()
+                                    updateLatestVehicles()
                                 else:
                                     error_msg = "Thẻ không hợp lệ cho hướng này" if direction == 'OUT' else result['message']
                                     logging.warning(error_msg)
                                     socketio.emit('error', {'message': error_msg})
                             else:
-                                camera.last_crop = None
-                                camera.last_plate_number = None
-                                socketio.emit('plate_update', {'plate_number': None})
+                                camera.last_crops[camera_id] = None
+                                camera.last_plate_numbers[camera_id] = None
+                                socketio.emit('plate_update', {
+                                    'plate_number': None,
+                                    'camera_id': camera_id
+                                })
                                 logging.warning("Không phát hiện biển số")
                             
             time.sleep(0.1)

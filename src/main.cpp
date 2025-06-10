@@ -19,7 +19,7 @@ IR_Sensor ir_sensor1(IR_SENSOR1_PIN, true);  // true nếu logic đảo
 IR_Sensor ir_sensor2(IR_SENSOR2_PIN, true);
 IR_Sensor ir_sensor3(IR_SENSOR3_PIN, true);
 
-const unsigned long BARRIER_DELAY = 3000; // 3 giây
+const unsigned long BARRIER_DELAY = 5000; // 5 giây
 
 // Thêm biến toàn cục để theo dõi trạng thái barrier
 volatile bool barrier_in_opening = false;
@@ -34,6 +34,11 @@ void barrierInTask(void * parameter) {
             barrier_in.closeBarrier();
             barrier_in_opening = false;
         }
+        if (barrier_in.throughStatus == 2 && barrier_in_opening) {
+            barrier_in.closeBarrier();
+            barrier_in_opening = false;
+            barrier_in.throughStatus = 0;
+        }
         vTaskDelay(50 / portTICK_PERIOD_MS);
     }
 }
@@ -44,6 +49,11 @@ void barrierOutTask(void * parameter) {
         if (barrier_out_opening && (millis() - barrier_out_timer >= BARRIER_DELAY)) {
             barrier_out.closeBarrier();
             barrier_out_opening = false;
+        }   
+        if (barrier_out.throughStatus == 2 && barrier_out_opening) {
+            barrier_out.closeBarrier();
+            barrier_out_opening = false;
+            barrier_out.throughStatus = 0;
         }
         vTaskDelay(50 / portTICK_PERIOD_MS);
     }
@@ -55,8 +65,8 @@ void setup() {
     // Khởi tạo RFID và Servo
     rfid_in.init(RFID_IN_SS_PIN, RFID_IN_RST_PIN, 1);
     rfid_out.init(RFID_OUT_SS_PIN, RFID_OUT_RST_PIN, 0);
-    barrier_in.init(SERVO_IN_PIN);
-    barrier_out.init(SERVO_OUT_PIN);
+    barrier_in.init(SERVO_IN_PIN, IR_IN_PIN);
+    barrier_out.init(SERVO_OUT_PIN, IR_OUT_PIN);
     
     // Khởi tạo cảm biến hồng ngoại
     ir_sensor1.begin();
@@ -123,6 +133,8 @@ void loop() {
     if (ir_sensor3.stateChanged()) {
         Serial.print("SLOT3:");
         Serial.println(ir_sensor3.getStatus() ? "1" : "0");
+        barrier_in.openBarrier();
     }
     delay(50);
+    Serial.println(barrier_in.throughStatus);
 }
