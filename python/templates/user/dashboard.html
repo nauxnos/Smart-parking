@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>User Dashboard</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="header">
+        <div class="header-top">
+            <h1>Bãi đỗ xe thông minh - User Dashboard</h1>
+            <div class="header-right">
+                <a href="{{ url_for('logout') }}" class="logout-btn">Đăng xuất</a>
+            </div>
+        </div>
+        <div class="nav-container">
+            <button class="nav-btn active" data-tab="stats">
+                <i class="fas fa-chart-bar"></i>
+                Thống kê
+            </button>
+            <button class="nav-btn" data-tab="parking">
+                <i class="fas fa-parking"></i>
+                Sơ đồ bãi xe
+            </button>
+            <button class="nav-btn" data-tab="table">
+                <i class="fas fa-history"></i>
+                Lịch sử
+            </button>
+        </div>
+    </div>
+
+    <!-- Tab Thống kê -->
+    <div id="stats-content" class="content-section active">
+        <div class="stats-box">
+            <h2>Thống kê bãi đỗ xe</h2>
+            <div class="stats-grid">
+                <div class="stat-item">
+                    <h3>Số xe hiện tại</h3>
+                    <p>{{ stats.current_vehicles }}/{{ stats.total_slots }}</p>
+                </div>
+                <div class="stat-item">
+                    <h3>Slot trống</h3>
+                    <p>{{ stats.available_slots }}</p>
+                </div>
+                <div class="stat-item">
+                    <h3>Lượt vào hôm nay</h3>
+                    <p>{{ stats.daily_entries }}</p>
+                </div>
+                <div class="stat-item">
+                    <h3>Lượt ra hôm nay</h3>
+                    <p>{{ stats.daily_exits }}</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="slots-status">
+            <h2>Trạng thái các slot</h2>
+            <div class="slots-grid" id="slots-grid">
+                <!-- Filled by JavaScript -->
+            </div>
+        </div>
+    </div>
+    <!-- Tab Sơ đồ bãi xe -->
+    <div id="parking-content" class="content-section">
+        <div class="parking-slots">
+            <h3>Sơ đồ bãi đỗ xe</h3>
+            <div class="slots-container">
+                <div class="slot" id="slot1">
+                    <div class="car-icon">🚗</div>
+                    <div class="slot-status"></div>
+                    <div class="slot-label">Vị trí 1</div>
+                </div>
+                <div class="slot" id="slot2">
+                    <div class="car-icon">🚗</div>
+                    <div class="slot-status"></div>
+                    <div class="slot-label">Vị trí 2</div>
+                </div>
+                <div class="slot" id="slot3">
+                    <div class="car-icon">🚗</div>
+                    <div class="slot-status"></div>
+                    <div class="slot-label">Vị trí 3</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tab Table -->
+    <div id="table-content" class="content-section">
+        <div class="table-container">
+            <div class="search-box">
+                <input type="text" id="search-input" placeholder="Nhập biển số xe...">
+            </div>
+            <table id="vehicle-table">
+                <thead>
+                    <tr>
+                        <th>STT</th>
+                        <th>Biển số</th>
+                        <th>RFID</th>
+                        <th>Thời gian vào</th>
+                        <th>Thời gian ra</th>
+                        <th>Trạng thái</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Data will be inserted here by JavaScript -->
+                </tbody>
+            </table>
+            
+            <div class="pagination">
+                <button id="prev-page" class="page-btn">&laquo; Trước</button>
+                <div id="page-numbers"></div>
+                <button id="next-page" class="page-btn">Sau &raquo;</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Thêm script socket.io trước các script khác -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+    <script src="{{ url_for('static', filename='js/user.js') }}"></script>
+</body>
+</html>

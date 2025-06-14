@@ -34,25 +34,36 @@ parking_slots = {
 
 @app.route('/')
 def home():
-    if 'username' in session:
-        return render_template('admin/dashboard.html')
-    return redirect(url_for('login'))
+    if 'username' not in session:
+        return redirect(url_for('login'))
+    if session.get('role') != 'admin':
+        return redirect(url_for('user_dashboard'))
+    return render_template('admin/dashboard.html')
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
-        if username == 'admin' and password == 'admin':
-            session['username'] = username
-            return redirect(url_for('home'))
-        else:
-            return render_template('login.html', error='Tài khoản hoặc mật khẩu không đúng')
+        
+        if db_handler:
+            user = db_handler.verify_user(username, password)
+            if user:
+                session['username'] = username
+                session['role'] = user['role']
+                # Chuyển hướng dựa vào role
+                if user['role'] == 'admin':
+                    return redirect(url_for('home'))
+                else:
+                    return redirect(url_for('user_dashboard'))
+            else:
+                return render_template('login.html', error='Tài khoản hoặc mật khẩu không đúng')
     return render_template('login.html')
 
 @app.route('/logout')
 def logout():
     session.pop('username', None)
+    session.pop('role', None)  # Xóa role khi đăng xuất
     return redirect(url_for('login'))
 
 @app.route('/video_feed/<camera_id>')
@@ -132,6 +143,43 @@ def get_latest_vehicles():
 def get_parking_slots():
     """Lấy trạng thái hiện tại của các slot đỗ xe"""
     return jsonify(parking_slots)
+
+@app.route('/user/dashboard')
+def user_dashboard():
+    if 'username' not in session:
+        return redirect(url_for('login'))
+    if session.get('role') == 'admin':
+        return redirect(url_for('home'))
+    if db_handler:
+        stats = db_handler.get_parking_stats()
+        return render_template('user/dashboard.html', stats=stats)
+    return redirect(url_for('login'))
+
+@app.route('/admin/users', methods=['GET', 'POST'])
+def manage_users():
+    if 'username' not in session or not db_handler.is_admin(session['username']):
+        return redirect(url_for('login'))
+    
+    if request.method == 'POST':
+        action = request.form.get('action')
+        if action == 'add':
+            username = request.form.get('username')
+            password = request.form.get('password')
+            role = request.form.get('role', 'user')
+            db_handler.add_user(username, password, role)
+        elif action == 'delete':
+            user_id = request.form.get('user_id')
+            db_handler.delete_user(user_id)
+            
+    users = db_handler.get_users()
+    return render_template('admin/users.html', users=users)
+
+@app.route('/get_parking_stats')
+def get_parking_stats():
+    if db_handler:
+        stats = db_handler.get_parking_stats()
+        return jsonify(stats)
+    return jsonify({})
 
 @socketio.on('connect')
 def handle_connect():

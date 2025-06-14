@@ -258,3 +258,71 @@ class DatabaseHandler:
         except Exception as e:
             logging.error(f"Lỗi khi lấy xe {status} gần nhất: {e}")
             return None
+
+    def get_parking_stats(self):
+        """Lấy thống kê bãi đỗ xe"""
+        try:
+            conn = self.get_connection()
+            cursor = conn.cursor()
+            
+            # Tổng số xe đang trong bãi
+            cursor.execute("SELECT COUNT(*) FROM Logs WHERE status = 'IN'")
+            current_vehicles = cursor.fetchone()[0]
+            
+            # Số lượt xe trong ngày
+            cursor.execute("""
+                SELECT 
+                    COUNT(CASE WHEN status = 'IN' THEN 1 END) as entries,
+                    COUNT(CASE WHEN status = 'OUT' THEN 1 END) as exits
+                FROM Logs 
+                WHERE CAST(time_in AS DATE) = CAST(GETDATE() AS DATE)
+            """)
+            daily_stats = cursor.fetchone()
+            
+            return {
+                'current_vehicles': current_vehicles,
+                'total_slots': 3,
+                'available_slots': 3 - current_vehicles,
+                'daily_entries': daily_stats[0],
+                'daily_exits': daily_stats[1]
+            }
+        except Exception as e:
+            logging.error(f"Lỗi khi lấy thống kê: {e}")
+            return {}
+
+    def is_admin(self, username):
+        """Kiểm tra user có phải admin không"""
+        try:
+            conn = self.get_connection()
+            cursor = conn.cursor()
+            cursor.execute("SELECT role FROM Users WHERE username = ?", (username,))
+            result = cursor.fetchone()
+            return result and result[0] == 'admin'
+        except Exception as e:
+            logging.error(f"Lỗi kiểm tra admin: {e}")
+            return False
+    
+    def verify_user(self, username, password):
+        """Xác thực đăng nhập user"""
+        try:
+            conn = self.get_connection()
+            cursor = conn.cursor()
+            
+            cursor.execute("""
+                SELECT id, username, role 
+                FROM Users 
+                WHERE username = ? AND password = ?
+            """, (username, password))
+            
+            result = cursor.fetchone()
+            if result:
+                return {
+                    'id': result[0],
+                    'username': result[1],
+                    'role': result[2]
+                }
+            return None
+            
+        except Exception as e:
+            logging.error(f"Lỗi xác thực user: {e}")
+            return None
